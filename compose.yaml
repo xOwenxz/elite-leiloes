@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-elite_leiloes}
+      POSTGRES_USER: ${POSTGRES_USER:-elite}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-troque-por-uma-senha-forte}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-elite} -d ${POSTGRES_DB:-elite_leiloes}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATA_DIR: /data
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-elite}:${POSTGRES_PASSWORD:-troque-por-uma-senha-forte}@db:5432/${POSTGRES_DB:-elite_leiloes}"
+    volumes:
+      - auction-data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  auction-data:
